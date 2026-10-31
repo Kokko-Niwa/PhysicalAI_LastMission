@@ -72,5 +72,5 @@ python3 sorter.py
 
 ## 動画
 
-YouTube: （URLをここに）
+YouTube: [https://youtu.be/aDikn_-uflo](https://youtu.be/aDikn_-uflo)
 ※ 2倍速で編集しています。
