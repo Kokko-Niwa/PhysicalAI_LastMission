@@ -1,0 +1,318 @@
+<?xml version="1.0" ?>
+<!--
+  PAI最終課題：仕分けブルドーザー  ステップ1用ワールド
+  Gazebo Harmonic (ROS 2 Jazzy 同梱) 向け
+  中身：地面 / ブルドーザー型の差動二輪ロボ（前カメラ付き）/ 赤・青の仕分けゾーン / テスト用ブロック1個 / 撮影用の俯瞰カメラ
+-->
+<sdf version="1.9">
+  <world name="sorting_arena">
+
+    <physics name="1ms" type="ignored">
+      <max_step_size>0.001</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+
+    <!-- 物理・操作・描画・カメラを動かすための基本プラグイン -->
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.9 0.9 0.9 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.4 0.2 -0.9</direction>
+    </light>
+
+    <!-- 地面 -->
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+          <surface><friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><plane><normal>0 0 1</normal><size>20 20</size></plane></geometry>
+          <material>
+            <ambient>0.75 0.75 0.72 1</ambient>
+            <diffuse>0.75 0.75 0.72 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- 仕分けゾーン（見た目だけ。当たり判定なし） -->
+    <model name="red_zone">
+      <static>true</static>
+      <pose>1.8 0.9 0.001 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.6 0.6 0.002</size></box></geometry>
+          <material>
+            <ambient>0.9 0.25 0.25 1</ambient>
+            <diffuse>0.9 0.25 0.25 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name="blue_zone">
+      <static>true</static>
+      <pose>1.8 -0.9 0.001 0 0 0</pose>
+      <link name="link">
+        <visual name="visual">
+          <geometry><box><size>0.6 0.6 0.002</size></box></geometry>
+          <material>
+            <ambient>0.25 0.4 0.9 1</ambient>
+            <diffuse>0.25 0.4 0.9 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- テスト用ブロック（ステップ3以降はプログラムから出し入れする） -->
+    <model name="block_test">
+      <pose>0.7 0 0.06 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.3</mass>
+          <inertia><ixx>0.00072</ixx><iyy>0.00072</iyy><izz>0.00072</izz></inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.12 0.12 0.12</size></box></geometry>
+          <surface><friction><ode><mu>0.5</mu><mu2>0.5</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.12 0.12 0.12</size></box></geometry>
+          <material>
+            <ambient>0.85 0.1 0.1 1</ambient>
+            <diffuse>0.85 0.1 0.1 1</diffuse>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <!-- ===== ブルドーザー本体 ===== -->
+    <model name="bulldozer">
+      <pose>0 0 0 0 0 0</pose>
+
+      <link name="chassis">
+        <pose>0 0 0.1 0 0 0</pose>
+        <inertial>
+          <mass>5.0</mass>
+          <inertia><ixx>0.0417</ixx><iyy>0.0708</iyy><izz>0.104</izz></inertia>
+        </inertial>
+        <!-- 胴体 -->
+        <collision name="body_collision">
+          <geometry><box><size>0.4 0.3 0.1</size></box></geometry>
+        </collision>
+        <visual name="body_visual">
+          <geometry><box><size>0.4 0.3 0.1</size></box></geometry>
+          <material>
+            <ambient>0.95 0.7 0.1 1</ambient>
+            <diffuse>0.95 0.7 0.1 1</diffuse>
+          </material>
+        </visual>
+        <!-- 前の排土板（ブレード）：これでブロックを押す -->
+        <collision name="blade_collision">
+          <pose>0.24 0 -0.03 0 0 0</pose>
+          <geometry><box><size>0.04 0.4 0.12</size></box></geometry>
+        </collision>
+        <visual name="blade_visual">
+          <pose>0.24 0 -0.03 0 0 0</pose>
+          <geometry><box><size>0.04 0.4 0.12</size></box></geometry>
+          <material>
+            <ambient>0.3 0.3 0.3 1</ambient>
+            <diffuse>0.3 0.3 0.3 1</diffuse>
+          </material>
+        </visual>
+        <!-- 左右のガード（Uブレード化）：押している最中にブロックが横へ逃げないようにする -->
+        <collision name="guard_left_collision">
+          <pose>0.33 0.14 -0.03 0 0 0</pose>
+          <geometry><box><size>0.14 0.02 0.12</size></box></geometry>
+        </collision>
+        <visual name="guard_left_visual">
+          <pose>0.33 0.14 -0.03 0 0 0</pose>
+          <geometry><box><size>0.14 0.02 0.12</size></box></geometry>
+          <material>
+            <ambient>0.3 0.3 0.3 1</ambient>
+            <diffuse>0.3 0.3 0.3 1</diffuse>
+          </material>
+        </visual>
+        <collision name="guard_right_collision">
+          <pose>0.33 -0.14 -0.03 0 0 0</pose>
+          <geometry><box><size>0.14 0.02 0.12</size></box></geometry>
+        </collision>
+        <visual name="guard_right_visual">
+          <pose>0.33 -0.14 -0.03 0 0 0</pose>
+          <geometry><box><size>0.14 0.02 0.12</size></box></geometry>
+          <material>
+            <ambient>0.3 0.3 0.3 1</ambient>
+            <diffuse>0.3 0.3 0.3 1</diffuse>
+          </material>
+        </visual>
+        <!-- 目印のカメラ台 -->
+        <visual name="cam_mount_visual">
+          <pose>0.12 0 0.09 0 0 0</pose>
+          <geometry><box><size>0.06 0.06 0.08</size></box></geometry>
+          <material>
+            <ambient>0.1 0.1 0.1 1</ambient>
+            <diffuse>0.1 0.1 0.1 1</diffuse>
+          </material>
+        </visual>
+        <!-- 前カメラ：AIがブロックを見るための目 -->
+        <sensor name="front_camera" type="camera">
+          <pose>0.15 0 0.12 0 0.3 0</pose>
+          <always_on>1</always_on>
+          <update_rate>10</update_rate>
+          <visualize>true</visualize>
+          <topic>/bulldozer/camera</topic>
+          <camera>
+            <horizontal_fov>1.047</horizontal_fov>
+            <image><width>320</width><height>240</height><format>R8G8B8</format></image>
+            <clip><near>0.05</near><far>10</far></clip>
+          </camera>
+        </sensor>
+      </link>
+
+      <!-- 左右の駆動輪 -->
+      <link name="left_wheel">
+        <pose>0 0.18 0.08 -1.5707 0 0</pose>
+        <inertial>
+          <mass>0.5</mass>
+          <inertia><ixx>0.000867</ixx><iyy>0.000867</iyy><izz>0.0016</izz></inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.08</radius><length>0.04</length></cylinder></geometry>
+          <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.08</radius><length>0.04</length></cylinder></geometry>
+          <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+      </link>
+
+      <link name="right_wheel">
+        <pose>0 -0.18 0.08 -1.5707 0 0</pose>
+        <inertial>
+          <mass>0.5</mass>
+          <inertia><ixx>0.000867</ixx><iyy>0.000867</iyy><izz>0.0016</izz></inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><cylinder><radius>0.08</radius><length>0.04</length></cylinder></geometry>
+          <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><cylinder><radius>0.08</radius><length>0.04</length></cylinder></geometry>
+          <material><ambient>0.1 0.1 0.1 1</ambient><diffuse>0.1 0.1 0.1 1</diffuse></material>
+        </visual>
+      </link>
+
+      <!-- 前後の補助輪（つるつるの玉） -->
+      <link name="front_caster">
+        <pose>0.15 0 0.04 0 0 0</pose>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia><ixx>0.000064</ixx><iyy>0.000064</iyy><izz>0.000064</izz></inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><sphere><radius>0.04</radius></sphere></geometry>
+          <surface><friction><ode><mu>0.0</mu><mu2>0.0</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.04</radius></sphere></geometry>
+        </visual>
+      </link>
+
+      <link name="rear_caster">
+        <pose>-0.15 0 0.04 0 0 0</pose>
+        <inertial>
+          <mass>0.1</mass>
+          <inertia><ixx>0.000064</ixx><iyy>0.000064</iyy><izz>0.000064</izz></inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><sphere><radius>0.04</radius></sphere></geometry>
+          <surface><friction><ode><mu>0.0</mu><mu2>0.0</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><sphere><radius>0.04</radius></sphere></geometry>
+        </visual>
+      </link>
+
+      <joint name="left_wheel_joint" type="revolute">
+        <parent>chassis</parent>
+        <child>left_wheel</child>
+        <axis>
+          <xyz expressed_in="__model__">0 1 0</xyz>
+          <limit><lower>-1.79769e+308</lower><upper>1.79769e+308</upper></limit>
+        </axis>
+      </joint>
+
+      <joint name="right_wheel_joint" type="revolute">
+        <parent>chassis</parent>
+        <child>right_wheel</child>
+        <axis>
+          <xyz expressed_in="__model__">0 1 0</xyz>
+          <limit><lower>-1.79769e+308</lower><upper>1.79769e+308</upper></limit>
+        </axis>
+      </joint>
+
+      <joint name="front_caster_joint" type="ball">
+        <parent>chassis</parent>
+        <child>front_caster</child>
+      </joint>
+
+      <joint name="rear_caster_joint" type="ball">
+        <parent>chassis</parent>
+        <child>rear_caster</child>
+      </joint>
+
+      <!-- 差動二輪の駆動：/cmd_vel に速度を送ると走る -->
+      <plugin filename="gz-sim-diff-drive-system" name="gz::sim::systems::DiffDrive">
+        <left_joint>left_wheel_joint</left_joint>
+        <right_joint>right_wheel_joint</right_joint>
+        <wheel_separation>0.36</wheel_separation>
+        <wheel_radius>0.08</wheel_radius>
+        <max_linear_acceleration>1.0</max_linear_acceleration>
+        <topic>/cmd_vel</topic>
+        <odom_topic>/bulldozer/wheel_odom</odom_topic>
+        <frame_id>odom</frame_id>
+        <child_frame_id>chassis</child_frame_id>
+        <odom_publish_frequency>30</odom_publish_frequency>
+      </plugin>
+
+      <!-- 本当の位置（シミュレータが知っている正解の位置）を出す：制御に使う -->
+      <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+        <odom_frame>odom</odom_frame>
+        <robot_base_frame>chassis</robot_base_frame>
+        <odom_topic>/bulldozer/odom</odom_topic>
+        <odom_publish_frequency>30</odom_publish_frequency>
+        <dimensions>2</dimensions>
+      </plugin>
+    </model>
+
+    <!-- 撮影用の俯瞰カメラ（GUIが崩れても、これで動画が作れる保険） -->
+    <model name="overhead_camera">
+      <static>true</static>
+      <pose>-1.4 0 2.8 0 0.85 0</pose>
+      <link name="link">
+        <sensor name="overhead" type="camera">
+          <always_on>1</always_on>
+          <update_rate>15</update_rate>
+          <topic>/overhead/image</topic>
+          <camera>
+            <horizontal_fov>1.2</horizontal_fov>
+            <image><width>1280</width><height>720</height><format>R8G8B8</format></image>
+            <clip><near>0.1</near><far>20</far></clip>
+          </camera>
+        </sensor>
+      </link>
+    </model>
+
+  </world>
+</sdf>
